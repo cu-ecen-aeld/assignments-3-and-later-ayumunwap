@@ -1,0 +1,9 @@
+﻿{
+  "agentId": 2,
+  "agentName": "ayamatani-VirtualBox",
+  "poolId": 1,
+  "poolName": "Default",
+  "serverUrl": "https://pipelinesghubeus7.actions.githubusercontent.com/6kxGvfOXhD1tt6GcHZ3jpc5SVQjTC79BwEwyIQiiKnBNPaixuV/",
+  "gitHubUrl": "https://github.com/cu-ecen-aeld/assignments-3-and-later-ayumunwap",
+  "workFolder": "_work"
+}
