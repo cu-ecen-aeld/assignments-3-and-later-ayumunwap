@@ -1,4 +1,8 @@
 #include "systemcalls.h"
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,9 +20,18 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-
+    int ret = system(cmd);
+    if (ret == -1) {
+        return false;
+    }
+    
+    // if the "cmd" didn't terminate normally or a non-zero value was returned by the "cmd"
+    if (WIFEXITED(ret) == 0 || WEXITSTATUS(ret) != 0) {
+        return false;
+    }
+    
     return true;
-}
+}    
 
 /**
 * @param count -The numbers of variables passed to the function. The variables are command to execute.
@@ -58,7 +71,24 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
-
+    int status;
+    pid_t pid = fork();
+    switch (pid) {
+        case -1:
+            return false;
+        case 0:
+ 	    if (execv(command[0], command) == -1) {
+		// indicate failure to the parent process
+ 	        _exit(1);
+ 	    }
+	default:
+            waitpid(pid, &status, 0);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+		// child process failed
+                return false;
+            }  
+    }
+    
     va_end(args);
 
     return true;
@@ -92,7 +122,32 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
-
+    int fd, status;
+    pid_t pid = fork();
+    switch (pid) {
+        case -1:
+            return false;
+        case 0:   
+	    fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+	    if (fd < 0) {
+		return false;
+	    }
+            if (dup2(fd, 1) < 0) {
+                return false;
+            }
+            close(fd);
+ 	    if (execv(command[0], command) == -1) {
+		// indicate failure to the parent process
+ 	        _exit(1);
+ 	    }
+	default:
+            wait(&status);
+            if (WIFEXITED(status) && WEXITSTATUS(status) != 0) {
+		// child process failed
+                return false;
+            }  
+    }
+   
     va_end(args);
 
     return true;
